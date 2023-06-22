@@ -22,6 +22,6 @@ class CardSchema(ma.Schema):
         fields = ('id', 'title', 'description', 'date', 'status', 'priority', 'user')
         ordered = True
 
-cards_schema = CardSchema()
+card_schema = CardSchema()
 cards_schema = CardSchema(many=True)
 

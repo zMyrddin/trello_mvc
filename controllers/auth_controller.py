@@ -11,16 +11,15 @@ auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
 @auth_bp.route('/register', methods=['POST'])
 def auth_register():
     try:
-        #     {"name": "User User2", "email": "user2@email.com", "password": "user2pw"}
+        # { "name": "User User2", "email": "user2@email.com", "password": "user2pw" }
         body_data = request.get_json()
 
         # Create a new User model instance from the user info
-        user = User()
+        user = User() # Instance of the User class which is in turn a SQLAlchemy model 
         user.name = body_data.get('name')
         user.email = body_data.get('email')
         if body_data.get('password'):
             user.password = bcrypt.generate_password_hash(body_data.get('password')).decode('utf-8')
-        
         # Add the user to the session
         db.session.add(user)
         # Commit to add the user to the database
@@ -29,21 +28,20 @@ def auth_register():
         return user_schema.dump(user), 201
     except IntegrityError as err:
         if err.orig.pgcode == errorcodes.UNIQUE_VIOLATION:
-            return {'error': 'Email address is already in use. Please try again'}, 409
+            return { 'error': 'Email address already in use' }, 409
         if err.orig.pgcode == errorcodes.NOT_NULL_VIOLATION:
-            return {'error': f'The {err.orig.diag.column_name} is required'}, 409
+            return { 'error': f'The {err.orig.diag.column_name} is required' }, 409
         
-
 
 @auth_bp.route('/login', methods=['POST'])
 def auth_login():
     body_data = request.get_json()
-    # Find the user by email_address
+    # Find the user by email address
     stmt = db.select(User).filter_by(email=body_data.get('email'))
     user = db.session.scalar(stmt)
-    #If user exists, and password is correct
+    # If user exists and password is correct
     if user and bcrypt.check_password_hash(user.password, body_data.get('password')):
         token = create_access_token(identity=str(user.id), expires_delta=timedelta(days=1))
-        return{'email': user.email, 'token': token, 'is_admin': user.is_admin}
+        return { 'email': user.email, 'token': token, 'is_admin': user.is_admin }
     else:
-        return {'error': 'Invalid email or password'}, 401
+        return { 'error': 'Invalid email or password' }, 401
